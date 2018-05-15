@@ -1,6 +1,7 @@
 import {appName} from '../config'
 import {Record} from 'immutable'
 import firebase from 'firebase'
+import { push } from 'react-router-redux'
 import { createSelector } from 'reselect'
 
 /**
@@ -57,8 +58,14 @@ export function signIn(email, password) {
 }
 
 firebase.auth().onAuthStateChanged(user => {
-    user && window.store.dispatch({
-        type: SIGN_IN_SUCCESS,
-        payload: { user }
-    })
+    if (!!user) {
+        window.store.dispatch({
+            type: SIGN_IN_SUCCESS,
+            payload: { user }
+        })
+
+        window.store.dispatch(push('/admin'))
+    }
+
+
 })
