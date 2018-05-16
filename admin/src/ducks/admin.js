@@ -1,4 +1,5 @@
 import {appName} from '../config'
+import {reset} from 'redux-form'
 import {Record, List} from 'immutable'
 import firebase from 'firebase'
 import { createSelector } from 'reselect'
@@ -39,6 +40,8 @@ export default function reducer(state = new ReducerRecord(), action) {
  * */
 
 export function addPerson(personData) {
-
-    return (dispatch) => Promise.resolve().then(dispatch({type: ADD_PERSON_SUCCESS, payload: personData}))
+    return (dispatch) => {
+        dispatch({type: ADD_PERSON_SUCCESS, payload: personData})
+        dispatch(reset('addPerson'))
+    }
 }

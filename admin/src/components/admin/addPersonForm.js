@@ -3,13 +3,6 @@ import {Field, reduxForm} from 'redux-form'
 import ErrorField from '../common/error-field'
 
 class AddPersonForm extends Component {
-    componentWillReceiveProps(nextProps) {
-
-        if(nextProps.submitSucceeded) {
-             this.props.reset()
-        }
-    }
-
     render() {
 
         return (
