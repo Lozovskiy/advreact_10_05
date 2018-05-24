@@ -8,12 +8,7 @@ import {
   loadingSelector
 } from '../../ducks/events'
 
-import {
-  Table,
-  Column,
-  InfiniteLoader,
-  defaultTableRowRenderer
-} from 'react-virtualized'
+import { Table, Column, InfiniteLoader } from 'react-virtualized'
 import 'react-virtualized/styles.css'
 
 export class EventsTable extends Component {
@@ -29,8 +24,8 @@ export class EventsTable extends Component {
     return (
       <InfiniteLoader
         isRowLoaded={this.isRowLoaded}
-        rowCount={loaded ? events.length : events.length + 1}
-        loadMoreRows={this.getNextEventsChunk}
+        rowCount={loaded ? events.length + 1 : events.length}
+        loadMoreRows={this.loadMoreRows}
       >
         {({ onRowsRendered, registerChild }) => (
           <Table
@@ -52,11 +47,8 @@ export class EventsTable extends Component {
     )
   }
 
-  // getRowRenderer = (rowCtx) => defaultTableRowRenderer(rowCtx)
-
-  getNextEventsChunk = () => {
-    console.log('asd')
-    this.props.fetchChunkEvents()
+  loadMoreRows = () => {
+    return new Promise(() => this.props.fetchChunkEvents())
   }
 
   isRowLoaded = ({ index }) => {

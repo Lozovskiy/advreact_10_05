@@ -53,13 +53,13 @@ export default function reducer(state = new ReducerRecord(), action) {
       return state
         .set('loading', false)
         .set('loaded', true)
-        .mergeIn('entities', fbToEntities(payload, EventRecord))
+        .set('entities', fbToEntities(payload, EventRecord))
 
     case FETCH_CHUNK_SUCCESS:
       return state
         .set('loading', false)
         .set('loaded', true)
-        .set('entities', fbToEntities(payload, EventRecord))
+        .mergeIn(['entities'], fbToEntities(payload, EventRecord))
 
     case TOGGLE_SELECTION:
       return state.update(
@@ -149,32 +149,32 @@ export function* fetchAllSaga() {
 }
 
 export function* fetchChunkSaga() {
-  while (true) {
-    yield take(FETCH_CHUNK_REQUEST)
-    const state = yield select(stateSelector)
+  const state = yield select(stateSelector)
 
-    const currentLastEvent = state.entities.last()
+  const currentLastEvent = state.entities.last()
 
-    const ref = firebase
-      .database()
-      .ref('events')
-      .orderByKey()
-      .limitToFirst(10)
-      .startAt(currentLastEvent ? currentLastEvent.uid : '')
+  const ref = firebase
+    .database()
+    .ref('events')
+    .orderByKey()
+    .limitToFirst(10)
+    .startAt(currentLastEvent ? currentLastEvent.uid : '')
 
-    yield put({
-      type: FETCH_CHUNK_START
-    })
+  yield put({
+    type: FETCH_CHUNK_START
+  })
 
-    const snapshot = yield call([ref, ref.once], 'value')
+  const snapshot = yield call([ref, ref.once], 'value')
 
-    yield put({
-      type: FETCH_CHUNK_SUCCESS,
-      payload: snapshot.val()
-    })
-  }
+  yield put({
+    type: FETCH_CHUNK_SUCCESS,
+    payload: snapshot.val()
+  })
 }
 
 export function* saga() {
-  yield all([takeEvery(FETCH_ALL_REQUEST, fetchAllSaga), fetchChunkSaga()])
+  yield all([
+    takeEvery(FETCH_ALL_REQUEST, fetchAllSaga),
+    takeEvery(FETCH_CHUNK_REQUEST, fetchChunkSaga)
+  ])
 }
