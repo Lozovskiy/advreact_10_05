@@ -6,7 +6,7 @@ import { EventsTable } from './events-table-virtualized'
 
 const events = eventsList.map((event) => ({ ...event, uid: Math.random() }))
 
-describe('EventLazyTable', () => {
+describe('EventsTableVirtualized', () => {
   it('should render 3 rows', () => {
     const table = mount(<EventsTable events={events.slice(0, 3)} />)
 
