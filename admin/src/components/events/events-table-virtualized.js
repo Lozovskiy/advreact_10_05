@@ -1,40 +1,66 @@
 import React, { Component } from 'react'
 import { connect } from 'react-redux'
 import {
-  fetchAllEvents,
+  fetchChunkEvents,
   toggleSelection as handleSelect,
   eventListSelector,
   loadedSelector,
   loadingSelector
 } from '../../ducks/events'
-import Loader from '../common/loader'
-import { Table, Column } from 'react-virtualized'
+
+import {
+  Table,
+  Column,
+  InfiniteLoader,
+  defaultTableRowRenderer
+} from 'react-virtualized'
 import 'react-virtualized/styles.css'
 
 export class EventsTable extends Component {
   static propTypes = {}
 
   componentDidMount() {
-    this.props.fetchAllEvents && this.props.fetchAllEvents()
+    !!this.props.fetchChunkEvents && this.props.fetchChunkEvents()
   }
 
   render() {
-    const { loading, events } = this.props
-    if (loading) return <Loader />
+    const { loaded, events } = this.props
+
     return (
-      <Table
-        rowCount={events.length}
-        width={400}
-        height={300}
-        rowGetter={this.rowGetter}
-        rowHeight={50}
-        overscanRowCount={0}
+      <InfiniteLoader
+        isRowLoaded={this.isRowLoaded}
+        rowCount={loaded ? events.length : events.length + 1}
+        loadMoreRows={this.getNextEventsChunk}
       >
-        <Column dataKey="title" width={300} />
-        <Column dataKey="where" width={300} />
-        <Column dataKey="when" width={300} />
-      </Table>
+        {({ onRowsRendered, registerChild }) => (
+          <Table
+            ref={registerChild}
+            rowCount={events.length}
+            rowGetter={this.rowGetter}
+            rowHeight={40}
+            width={1000}
+            height={300}
+            onRowClick={this.handleRowClick}
+            onRowsRendered={onRowsRendered}
+          >
+            <Column dataKey="title" width={300} />
+            <Column dataKey="where" width={300} />
+            <Column dataKey="when" width={300} />
+          </Table>
+        )}
+      </InfiniteLoader>
     )
+  }
+
+  // getRowRenderer = (rowCtx) => defaultTableRowRenderer(rowCtx)
+
+  getNextEventsChunk = () => {
+    console.log('asd')
+    this.props.fetchChunkEvents()
+  }
+
+  isRowLoaded = ({ index }) => {
+    return index < this.props.events.length
   }
 
   rowGetter = ({ index }) => this.props.events[index]
@@ -46,5 +72,5 @@ export default connect(
     loading: loadingSelector(state),
     loaded: loadedSelector(state)
   }),
-  { fetchAllEvents, handleSelect }
+  { fetchChunkEvents, handleSelect }
 )(EventsTable)

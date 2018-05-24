@@ -1,4 +1,4 @@
-import { all, takeEvery, put, call } from 'redux-saga/effects'
+import { all, takeEvery, put, call, select, take } from 'redux-saga/effects'
 import { appName } from '../config'
 import { Record, OrderedSet, OrderedMap } from 'immutable'
 import firebase from 'firebase/app'
@@ -14,6 +14,9 @@ const prefix = `${appName}/${moduleName}`
 export const FETCH_ALL_REQUEST = `${prefix}/FETCH_ALL_REQUEST`
 export const FETCH_ALL_START = `${prefix}/FETCH_ALL_START`
 export const FETCH_ALL_SUCCESS = `${prefix}/FETCH_ALL_SUCCESS`
+export const FETCH_CHUNK_REQUEST = `${prefix}/FETCH_CHUNK_REQUEST`
+export const FETCH_CHUNK_START = `${prefix}/FETCH_CHUNK_START`
+export const FETCH_CHUNK_SUCCESS = `${prefix}/FETCH_CHUNK_SUCCESS`
 export const TOGGLE_SELECTION = `${prefix}/TOGGLE_SELECTION`
 
 /**
@@ -43,7 +46,16 @@ export default function reducer(state = new ReducerRecord(), action) {
     case FETCH_ALL_START:
       return state.set('loading', true)
 
+    case FETCH_CHUNK_START:
+      return state.set('loading', true)
+
     case FETCH_ALL_SUCCESS:
+      return state
+        .set('loading', false)
+        .set('loaded', true)
+        .mergeIn('entities', fbToEntities(payload, EventRecord))
+
+    case FETCH_CHUNK_SUCCESS:
       return state
         .set('loading', false)
         .set('loaded', true)
@@ -104,6 +116,12 @@ export function fetchAllEvents() {
   }
 }
 
+export function fetchChunkEvents() {
+  return {
+    type: FETCH_CHUNK_REQUEST
+  }
+}
+
 export function toggleSelection(uid) {
   return {
     type: TOGGLE_SELECTION,
@@ -130,6 +148,33 @@ export function* fetchAllSaga() {
   })
 }
 
+export function* fetchChunkSaga() {
+  while (true) {
+    yield take(FETCH_CHUNK_REQUEST)
+    const state = yield select(stateSelector)
+
+    const currentLastEvent = state.entities.last()
+
+    const ref = firebase
+      .database()
+      .ref('events')
+      .orderByKey()
+      .limitToFirst(10)
+      .startAt(currentLastEvent ? currentLastEvent.uid : '')
+
+    yield put({
+      type: FETCH_CHUNK_START
+    })
+
+    const snapshot = yield call([ref, ref.once], 'value')
+
+    yield put({
+      type: FETCH_CHUNK_SUCCESS,
+      payload: snapshot.val()
+    })
+  }
+}
+
 export function* saga() {
-  yield all([takeEvery(FETCH_ALL_REQUEST, fetchAllSaga)])
+  yield all([takeEvery(FETCH_ALL_REQUEST, fetchAllSaga), fetchChunkSaga()])
 }
